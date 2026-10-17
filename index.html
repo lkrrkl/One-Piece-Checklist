@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏴‍☠️ Checklist One Piece</title>
+<style>
+  :root {
+    --fondo: #0f172a;
+    --tarjeta: #1e293b;
+    --tarjeta-hover: #243247;
+    --borde: #334155;
+    --texto: #e2e8f0;
+    --suave: #94a3b8;
+    --acento: #f59e0b;
+    --verde: #22c55e;
+    --rojo: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    padding: 20px 14px 60px;
+    line-height: 1.5;
+  }
+  header { max-width: 900px; margin: 0 auto 20px; text-align: center; }
+  h1 { font-size: 1.7rem; color: var(--acento); margin-bottom: 4px; }
+  .sub { color: var(--suave); font-size: 0.9rem; }
+
+  .barra-global {
+    max-width: 900px; margin: 0 auto 18px;
+    background: var(--tarjeta); border: 1px solid var(--borde);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .barra-global .info {
+    display: flex; justify-content: space-between;
+    font-size: 0.85rem; margin-bottom: 8px;
+  }
+  .progreso { height: 12px; background: #0b1220; border-radius: 8px; overflow: hidden; }
+  .progreso > div {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #f59e0b, #22c55e);
+    transition: width 0.3s;
+  }
+
+  .botones {
+    max-width: 900px; margin: 0 auto 24px;
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  }
+  button {
+    background: var(--tarjeta); color: var(--texto);
+    border: 1px solid var(--borde); padding: 8px 14px;
+    border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+    transition: all 0.2s;
+  }
+  button:hover { background: var(--tarjeta-hover); border-color: var(--acento); }
+  button.peligro:hover { border-color: var(--rojo); color: #f87171; }
+
+  .titulo-seccion {
+    max-width: 900px; margin: 0 auto 6px;
+    font-size: 1.15rem; color: var(--acento);
+    border-left: 4px solid var(--acento);
+    padding-left: 10px;
+  }
+  .subtitulo-seccion {
+    max-width: 900px; margin: 0 auto 18px;
+    font-size: 0.82rem; color: var(--suave);
+    padding-left: 14px;
+  }
+
+  /* ---- TARJETA GENERAL ---- */
+  .saga {
+    max-width: 900px; margin: 0 auto 14px;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .saga::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(15, 23, 42, 0.85) 0%,
+      rgba(15, 23, 42, 0.75) 50%,
+      rgba(15, 23, 42, 0.90) 100%
+    );
+    z-index: 0;
+  }
+  .saga-header, .saga-body { position: relative; z-index: 1; }
+
+  .saga-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; cursor: pointer; user-select: none;
+    background: rgba(30, 41, 59, 0.85);
+    backdrop-filter: blur(4px);
+    transition: background 0.2s;
+  }
+  .saga-header:hover { background: rgba(36, 50, 71, 0.95); }
+
+  /* Distintivo para películas */
+  .badge-tipo {
+    font-size: 0.6rem; padding: 2px 7px;
+    border-radius: 20px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .badge-canon {
+    background: #14532d; color: #4ade80;
+    border: 1px solid #166534;
+  }
+  .badge-nocanon {
+    background: #451a03; color: #fb923c;
+    border: 1px solid #7c2d12;
+  }
+
+  .saga-header .portada {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1.1rem; color: #fff;
+    flex-shrink: 0; overflow: hidden;
+  }
+  .saga-header .portada img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .saga-header .saga-info { flex: 1; min-width: 0; }
+  .saga-header .saga-info h3 {
+    font-size: 1rem; color: var(--texto); margin-bottom: 2px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .saga-header .saga-info .episodios {
+    font-size: 0.78rem; color: var(--suave);
+  }
+  .saga-header .flecha {
+    color: var(--suave); font-size: 0.9rem;
+    transition: transform 0.3s;
+  }
+  .saga.abierta .saga-header .flecha { transform: rotate(180deg); }
+
+  .saga-body {
+    display: none;
+    padding: 14px 16px 16px;
+    border-top: 1px solid rgba(51, 65, 85, 0.5);
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(2px);
+  }
+  .saga.abierta .saga-body { display: block; }
+
+  /* Personajes */
+  .personajes {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    padding-bottom: 12px; margin-bottom: 12px;
+    border-bottom: 1px dashed #2b3b55;
+  }
+  .personaje {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; font-size: 0.7rem; color: var(--texto); width: 54px;
+    text-align: center;
+  }
+  .personaje .avatar-wrap {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 2px solid var(--borde);
+    overflow: hidden;
+    background: #0b1220;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: var(--acento);
+    font-size: 1rem;
+  }
+  .personaje img {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block;
+  }
+
+  .resumen {
+    font-size: 0.8rem; color: var(--texto);
+    padding: 8px 10px; margin-bottom: 12px;
+    background: rgba(11, 18, 32, 0.8);
+    border-radius: 6px;
+    border-left: 3px solid var(--acento);
+  }
+
+  .items { display: flex; flex-direction: column; gap: 0; }
+  .item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px dashed #2b3b55;
+  }
+  .item:last-child { border-bottom: none; }
+  .item input[type="checkbox"] {
+    width: 18px; height: 18px; margin-top: 2px;
+    accent-color: var(--verde); cursor: pointer;
+    flex-shrink: 0;
+  }
+  .item label { cursor: pointer; font-size: 0.88rem; flex: 1; }
+  .item .tag {
+    display: inline-block;
+    font-size: 0.65rem; padding: 1px 7px;
+    border-radius: 20px; margin-left: 6px;
+    font-weight: 600; white-space: nowrap;
+    background: #3b2f1a; color: var(--acento);
+  }
+  .item .tag.evitar { background: #3b1f1f; color: #f87171; }
+  .item .tag.nota { background: #1f2f3b; color: #7dd3fc; }
+  .item.hecho label { opacity: 0.45; text-decoration: line-through; }
+
+  /* Película no canon: tarjeta más apagada */
+  .saga.pelicula-nocanon {
+    opacity: 0.75;
+    border-style: dashed;
+  }
+
+  #errorBox {
+    max-width: 900px; margin: 20px auto;
+    background: #3b1f1f; border: 1px solid var(--rojo);
+    color: #fca5a5; padding: 12px; border-radius: 8px;
+    font-size: 0.85rem; display: none;
+    font-family: monospace; white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏴‍☠️ Checklist One Piece</h1>
+  <p class="sub">Marca lo que vas viendo. El progreso solo cuenta sagas y películas <strong>CANON</strong>.</p>
+</header>
+
+<div class="barra-global">
+  <div class="info">
+    <span id="progresoTexto">Progreso global: 0%</span>
+    <span id="contador">0 / 0 ítems</span>
+  </div>
+  <div class="progreso"><div id="barraGlobal"></div></div>
+</div>
+
+<div class="botones">
+  <button onclick="expandirTodo(true)">Expandir todo</button>
+  <button onclick="expandirTodo(false)">Contraer todo</button>
+  <button class="peligro" onclick="reiniciar()">Reiniciar progreso</button>
+</div>
+
+<h2 class="titulo-seccion">📖 Desglose de sagas y películas</h2>
+<p class="subtitulo-seccion">Las películas están intercaladas según su ubicación cronológica. Solo las marcadas como CANON suman al progreso global.</p>
+
+<div id="contenedor"></div>
+
+<div id="errorBox"></div>
+
+<script>
+try {
+
+// ========= DATOS: SAGAS + PELÍCULAS =========
+// tipo: "saga" | "pelicula"
+// canon: true/false (solo relevante para películas; las sagas siempre cuentan)
+const CONTENIDO = [
+  // ---------- SAGA 1 ----------
+  {
+    tipo: "saga",
+    nombre: "East Blue",
+    episodios: "Ep. 1–61",
+    color: "#3498db",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/0/0e/East_Blue_Saga_Infobox.png",
+    resumen: "Imprescindibles: 1–45, 48–53. Evitar: 54–61.",
+    personajes: [
+      { nombre: "Luffy", img: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Pre_Timeskip_Infobox.png" },
+      { nombre: "Zoro", img: "https://static.wikia.nocookie.net/onepiece/images/5/5b/Roronoa_Zoro_Anime_Pre_Timeskip_Infobox.png" },
+      { nombre: "Nami", img: "https://static.wikia.nocookie.net/onepiece/images/4/4c/Nami_Anime_Pre_Timeskip_Infobox.png" },
+      { nombre: "Usopp", img: "https://static.wikia.nocookie.net/onepiece/images/e/e0/Usopp_Anime_Pre_Timeskip_Infobox.png" },
+      { nombre: "Sanji", img: "https://static.wikia.nocookie.net/onepiece/images/1/1e/Sanji_Anime_Pre_Timeskip_Infobox.png" }
+    ],
+    items: [
+      { id:"eb1", texto:"Ep. 1–4: Origen de Luffy y promesa con Shanks", tag:"no saltarse" },
+      { id:"eb2", texto:"Ep. 37: El 'Luffy, ayúdame' de Nami", tag:"no saltarse" },
+      { id:"eb3", texto:"Ep. 45 y 48–53: Loguetown y aparición de Buggy", tag:"no saltarse" },
+      { id:"eb4", texto:"Ep. 54–61: Isla Warship (relleno)", tag:"evitar" }
+    ]
+  },
+  // ---------- PELÍCULA 1 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "One Piece: La Película (2000)",
+    episodios: "Después del arco de Captain Kuro · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Película independiente. No es canon y no afecta a la historia principal.",
+    personajes: [
+      { nombre: "Luffy", img: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Pre_Timeskip_Infobox.png" },
+      { nombre: "El Drago", img: "" }
+    ],
+    items: [
+      { id:"p01", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- PELÍCULA 2 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "Aventura en la Isla Espiral (2001)",
+    episodios: "Después de Loguetown · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Película independiente. No es canon.",
+    personajes: [
+      { nombre: "Luffy", img: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Pre_Timeskip_Infobox.png" },
+      { nombre: "Nami", img: "https://static.wikia.nocookie.net/onepiece/images/4/4c/Nami_Anime_Pre_Timeskip_Infobox.png" }
+    ],
+    items: [
+      { id:"p02", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- SAGA 2 ----------
+  {
+    tipo: "saga",
+    nombre: "Alabasta",
+    episodios: "Ep. 62–135",
+    color: "#e67e22",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/5/5c/Alabasta_Saga_Infobox.png",
+    resumen: "Imprescindibles: 62–130. Evitar: 131–143.",
+    personajes: [
+      { nombre: "Chopper", img: "https://static.wikia.nocookie.net/onepiece/images/4/4c/Tony_Tony_Chopper_Anime_Infobox.png" },
+      { nombre: "Robin", img: "https://static.wikia.nocookie.net/onepiece/images/6/6c/Nico_Robin_Anime_Infobox.png" },
+      { nombre: "Crocodile", img: "https://static.wikia.nocookie.net/onepiece/images/8/8f/Crocodile_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"al1", texto:"Ep. 78–91: Pasado de Chopper", tag:"no saltarse" },
+      { id:"al2", texto:"Ep. 92–130: Todo Alabasta y la unión de Robin", tag:"no saltarse" },
+      { id:"al3", texto:"Ep. 131–143: Post-Alabasta e Isla Cabra/Ruluka", tag:"evitar" }
+    ]
+  },
+  // ---------- PELÍCULA 3 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "El Reino de Chopper en la Isla de los Animales Raros (2002)",
+    episodios: "Después de Alabasta · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Película independiente. No es canon.",
+    personajes: [
+      { nombre: "Chopper", img: "https://static.wikia.nocookie.net/onepiece/images/4/4c/Tony_Tony_Chopper_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"p03", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- PELÍCULA 4 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "Dead End no Bōken (2003)",
+    episodios: "Entre Alabasta y Jaya · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Película independiente. No es canon.",
+    personajes: [
+      { nombre: "Luffy", img: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Pre_Timeskip_Infobox.png" }
+    ],
+    items: [
+      { id:"p04", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- PELÍCULA 5 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "La Espada Sagrada Maldita (2004)",
+    episodios: "Después de Dead End · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Película independiente. No es canon.",
+    personajes: [
+      { nombre: "Zoro", img: "https://static.wikia.nocookie.net/onepiece/images/5/5b/Roronoa_Zoro_Anime_Pre_Timeskip_Infobox.png" }
+    ],
+    items: [
+      { id:"p05", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- SAGA 3 ----------
+  {
+    tipo: "saga",
+    nombre: "Skypiea",
+    episodios: "Ep. 136–206",
+    color: "#1abc9c",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/3/3e/Skypiea_Saga_Infobox.png",
+    resumen: "Imprescindibles: 144–195. G-8 (196–206) opcional.",
+    personajes: [
+      { nombre: "Enel", img: "https://static.wikia.nocookie.net/onepiece/images/7/7f/Enel_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"sk1", texto:"Ep. 144–152: Jaya, discurso de Barbanegra y ciudad dorada", tag:"no saltarse" },
+      { id:"sk2", texto:"Ep. 153–195: Batalla contra Enel", tag:"no saltarse" },
+      { id:"sk3", texto:"Ep. 196–206: Arco G-8 (relleno, pero muy querido)", tag:"nota" }
+    ]
+  },
+  // ---------- PELÍCULA 6 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "Baron Omatsuri y la Isla Secreta (2005)",
+    episodios: "Después del arco G-8 · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Película independiente. No es canon.",
+    personajes: [
+      { nombre: "Luffy", img: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Pre_Timeskip_Infobox.png" }
+    ],
+    items: [
+      { id:"p06", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- PELÍCULA 7 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "El Soldado Mecánico del Castillo Karakuri (2006)",
+    episodios: "Después de Ocean's Dream · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Película independiente. No es canon.",
+    personajes: [
+      { nombre: "Franky", img: "https://static.wikia.nocookie.net/onepiece/images/9/9d/Franky_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"p07", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- SAGA 4 ----------
+  {
+    tipo: "saga",
+    nombre: "Water 7 / Enies Lobby",
+    episodios: "Ep. 207–325",
+    color: "#2980b9",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/7/7e/Water_7_Saga_Infobox.png",
+    resumen: "Imprescindibles: 227–325. Evitar: 220–226, 279–283, 317–319.",
+    personajes: [
+      { nombre: "Robin", img: "https://static.wikia.nocookie.net/onepiece/images/6/6c/Nico_Robin_Anime_Infobox.png" },
+      { nombre: "Franky", img: "https://static.wikia.nocookie.net/onepiece/images/9/9d/Franky_Anime_Infobox.png" },
+      { nombre: "Usopp", img: "https://static.wikia.nocookie.net/onepiece/images/e/e0/Usopp_Anime_Pre_Timeskip_Infobox.png" }
+    ],
+    items: [
+      { id:"w1", texto:"Ep. 278: El '¡Quiero vivir!' de Robin", tag:"no saltarse" },
+      { id:"w2", texto:"Ep. 312: Despedida del Going Merry", tag:"no saltarse" },
+      { id:"w3", texto:"Ep. 220–226, 279–283, 317–319: Relleno y recopilatorios", tag:"evitar" }
+    ]
+  },
+  // ---------- PELÍCULA 8 (ADAPTACIÓN / NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "La Princesa del Desierto y los Piratas (2007)",
+    episodios: "Adaptación del arco de Alabasta · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Recuento alternativo del arco de Alabasta. No es canon.",
+    personajes: [
+      { nombre: "Vivi", img: "" }
+    ],
+    items: [
+      { id:"p08", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- PELÍCULA 9 (ADAPTACIÓN / NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "El Milagro de la Flor de Cerezo de Invierno (2008)",
+    episodios: "Adaptación del arco de Drum Island · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Recuento alternativo del arco de Drum Island. No es canon.",
+    personajes: [
+      { nombre: "Chopper", img: "https://static.wikia.nocookie.net/onepiece/images/4/4c/Tony_Tony_Chopper_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"p09", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- SAGA 5 ----------
+  {
+    tipo: "saga",
+    nombre: "Thriller Bark",
+    episodios: "Ep. 326–384",
+    color: "#8e44ad",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/8/8c/Thriller_Bark_Saga_Infobox.png",
+    resumen: "Imprescindibles: 337–381. Evitar: 326–336 y 382–384.",
+    personajes: [
+      { nombre: "Brook", img: "https://static.wikia.nocookie.net/onepiece/images/9/9b/Brook_Anime_Infobox.png" },
+      { nombre: "Moria", img: "https://static.wikia.nocookie.net/onepiece/images/1/1c/Gecko_Moria_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"tb1", texto:"Ep. 377: Sacrificio de Zoro frente a Kuma", tag:"no saltarse" },
+      { id:"tb2", texto:"Ep. 326–336 y 382–384: Ice Hunter y Spa Island", tag:"evitar" }
+    ]
+  },
+  // ---------- PELÍCULA 10 (CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: true,
+    nombre: "Strong World (2009)",
+    episodios: "Entre Thriller Bark y Sabaody · CANON",
+    color: "#f39c12",
+    resumen: "Escrita por Oda. Shiki y su fruta son canon. El evento de la película se considera parte de la línea principal.",
+    personajes: [
+      { nombre: "Shiki", img: "" }
+    ],
+    items: [
+      { id:"p10", texto:"Película vista", tag:"canon" }
+    ]
+  },
+  // ---------- PELÍCULA 11 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "3D: Mugiwara Chase (2011)",
+    episodios: "Después de Strong World · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Corto en 3D. No es canon.",
+    personajes: [
+      { nombre: "Luffy", img: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Pre_Timeskip_Infobox.png" }
+    ],
+    items: [
+      { id:"p11", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- SAGA 6 ----------
+  {
+    tipo: "saga",
+    nombre: "Marineford",
+    episodios: "Ep. 385–516",
+    color: "#c0392b",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/4/4d/Marineford_Saga_Infobox.png",
+    resumen: "Imprescindibles: 385–405, 408–417, 430–516. Evitar: 406–407, 426–429, 457–458.",
+    personajes: [
+      { nombre: "Ace", img: "https://static.wikia.nocookie.net/onepiece/images/5/5e/Portgas_D._Ace_Anime_Infobox.png" },
+      { nombre: "Barbablanca", img: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Edward_Newgate_Anime_Infobox.png" },
+      { nombre: "Barbanegra", img: "https://static.wikia.nocookie.net/onepiece/images/7/7a/Marshall_D._Teach_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"mf1", texto:"Ep. 405: Separación de la tripulación en Sabaody", tag:"no saltarse" },
+      { id:"mf2", texto:"Ep. 483: Muerte de Ace", tag:"no saltarse" },
+      { id:"mf3", texto:"Ep. 406–407, 426–429, 457–458: Relleno y recopilatorios", tag:"evitar" }
+    ]
+  },
+  // ---------- PELÍCULA 12 (CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: true,
+    nombre: "Film Z (2012)",
+    episodios: "Antes de Punk Hazard · CANON",
+    color: "#f39c12",
+    resumen: "Oda participó en la producción. Zephyr es un personaje canon. El evento se considera parte de la línea principal.",
+    personajes: [
+      { nombre: "Zephyr", img: "" }
+    ],
+    items: [
+      { id:"p12", texto:"Película vista", tag:"canon" }
+    ]
+  },
+  // ---------- SAGA 7 ----------
+  {
+    tipo: "saga",
+    nombre: "Isla Gyojin",
+    episodios: "Ep. 517–574",
+    color: "#16a085",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/0/0b/Fish-Man_Island_Saga_Infobox.png",
+    resumen: "Casi todo imprescindible. Evitar: 542 y 575–578.",
+    personajes: [
+      { nombre: "Hody Jones", img: "https://static.wikia.nocookie.net/onepiece/images/8/8b/Hody_Jones_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"ig1", texto:"Ep. 517–522: Reencuentro tras el salto temporal", tag:"no saltarse" },
+      { id:"ig2", texto:"Ep. 542 y 575–578: Crossover y Z's Ambition", tag:"evitar" }
+    ]
+  },
+  // ---------- SAGA 8 ----------
+  {
+    tipo: "saga",
+    nombre: "Dressrosa",
+    episodios: "Ep. 575–746",
+    color: "#d35400",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/2/2e/Dressrosa_Saga_Infobox.png",
+    resumen: "Imprescindibles: 579–746. Evitar: 626–628 y 747–750.",
+    personajes: [
+      { nombre: "Law", img: "https://static.wikia.nocookie.net/onepiece/images/3/3f/Trafalgar_D._Water_Law_Anime_Infobox.png" },
+      { nombre: "Doflamingo", img: "https://static.wikia.nocookie.net/onepiece/images/1/1d/Donquixote_Doflamingo_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"dr1", texto:"Flashback de Law y Corazón", tag:"no saltarse" },
+      { id:"dr2", texto:"Gear 4 de Luffy contra Doflamingo (aprox. 700–746)", tag:"no saltarse" },
+      { id:"dr3", texto:"Ep. 626–628 y 747–750: Relleno", tag:"evitar" }
+    ]
+  },
+  // ---------- PELÍCULA 13 (CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: true,
+    nombre: "Film Gold (2016)",
+    episodios: "Después de Silver Mine · CANON",
+    color: "#f39c12",
+    resumen: "Oda participó en la producción. El evento se considera parte de la línea principal.",
+    personajes: [
+      { nombre: "Gild Tesoro", img: "" }
+    ],
+    items: [
+      { id:"p13", texto:"Película vista", tag:"canon" }
+    ]
+  },
+  // ---------- SAGA 9 ----------
+  {
+    tipo: "saga",
+    nombre: "Whole Cake Island",
+    episodios: "Ep. 747–889",
+    color: "#e84393",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/4/4f/Whole_Cake_Island_Saga_Infobox.png",
+    resumen: "Imprescindibles: 751–889. Evitar: 780–782.",
+    personajes: [
+      { nombre: "Sanji", img: "https://static.wikia.nocookie.net/onepiece/images/1/1e/Sanji_Anime_Pre_Timeskip_Infobox.png" },
+      { nombre: "Big Mom", img: "https://static.wikia.nocookie.net/onepiece/images/2/2a/Charlotte_Linlin_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"wc1", texto:"Ep. 808: Big Mom enfurecida (escala Yonko)", tag:"no saltarse" },
+      { id:"wc2", texto:"Ep. 870: Final de Luffy vs Katakuri", tag:"no saltarse" },
+      { id:"wc3", texto:"Ep. 780–782: Marine Rookie (relleno)", tag:"evitar" }
+    ]
+  },
+  // ---------- PELÍCULA 14 (NO CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: false,
+    nombre: "Stampede (2019)",
+    episodios: "Después de Wano (aprox. Ep. 958) · NO CANON",
+    color: "#7f8c8d",
+    resumen: "Película conmemorativa. No es canon, aunque aparecen muchos personajes.",
+    personajes: [
+      { nombre: "Luffy", img: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Pre_Timeskip_Infobox.png" }
+    ],
+    items: [
+      { id:"p14", texto:"Película vista", tag:"no canon" }
+    ]
+  },
+  // ---------- SAGA 10 ----------
+  {
+    tipo: "saga",
+    nombre: "Wano",
+    episodios: "Ep. 890–1085",
+    color: "#c0392b",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/6/6c/Wano_Country_Saga_Infobox.png",
+    resumen: "Imprescindibles: 890–1085. Evitar: 895–896 y 1029–1030.",
+    personajes: [
+      { nombre: "Kaido", img: "https://static.wikia.nocookie.net/onepiece/images/7/7e/Kaido_Anime_Infobox.png" },
+      { nombre: "Oden", img: "https://static.wikia.nocookie.net/onepiece/images/3/3a/Kozuki_Oden_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"wa1", texto:"Ep. 982: Inicio de la guerra en Onigashima", tag:"no saltarse" },
+      { id:"wa2", texto:"Ep. 1015: Luffy vs Kaido (animación de película)", tag:"no saltarse" },
+      { id:"wa3", texto:"Ep. 1071: Despertar del Gear 5", tag:"no saltarse" },
+      { id:"wa4", texto:"Ep. 895–896 y 1029–1030: Relleno", tag:"evitar" }
+    ]
+  },
+  // ---------- PELÍCULA 15 (CANON) ----------
+  {
+    tipo: "pelicula",
+    canon: true,
+    nombre: "Film Red (2022)",
+    episodios: "Durante el Acto III de Wano · CANON",
+    color: "#f39c12",
+    resumen: "Oda participó en la producción. Uta y el evento se consideran parte de la línea principal.",
+    personajes: [
+      { nombre: "Uta", img: "" }
+    ],
+    items: [
+      { id:"p15", texto:"Película vista", tag:"canon" }
+    ]
+  },
+  // ---------- SAGA 11 ----------
+  {
+    tipo: "saga",
+    nombre: "Egghead",
+    episodios: "Ep. 1086–actualidad",
+    color: "#00b894",
+    fondo: "https://static.wikia.nocookie.net/onepiece/images/9/9d/Egghead_Island_Infobox.png",
+    resumen: "Imprescindibles: 1086 en adelante.",
+    personajes: [
+      { nombre: "Vegapunk", img: "https://static.wikia.nocookie.net/onepiece/images/0/0c/Dr._Vegapunk_Anime_Infobox.png" }
+    ],
+    items: [
+      { id:"eg1", texto:"Ep. 1136: Pasado de Kuma (uno de los mejores episodios)", tag:"no saltarse" }
+    ]
+  }
+];
+
+// ========= AVATAR DE RESPALDO =========
+function makeAvatarRespaldo(nombre, color) {
+  const letra = (nombre || "?").charAt(0).toUpperCase();
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+              '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
+              '<text x="50" y="70" text-anchor="middle" font-size="55" ' +
+              'fill="#ffffff" font-family="Arial,sans-serif" font-weight="bold">' +
+              letra + '</text></svg>';
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+// ========= ESTADO =========
+const CLAVE = "onepiece_checklist_v5";
+let estado = {};
+try {
+  const guardado = localStorage.getItem(CLAVE);
+  if (guardado) estado = JSON.parse(guardado);
+} catch(e) { estado = {}; }
+
+// ========= RENDER =========
+const contenedor = document.getElementById("contenedor");
+
+CONTENIDO.forEach(function(bloque, i) {
+  const esPelicula = bloque.tipo === "pelicula";
+  const esCanon = bloque.canon === true;
+
+  const div = document.createElement("div");
+  div.className = "saga abierta";
+  if (esPelicula && !esCanon) {
+    div.classList.add("pelicula-nocanon");
+  }
+  if (bloque.fondo) {
+    div.style.backgroundImage = "url('" + bloque.fondo + "')";
+  }
+
+  // --- HEADER ---
+  const header = document.createElement("div");
+  header.className = "saga-header";
+
+  const portada = document.createElement("div");
+  portada.className = "portada";
+  portada.style.background = bloque.color || "#555";
+  portada.textContent = esPelicula ? "🎬" : (i + 1);
+  header.appendChild(portada);
+
+  const info = document.createElement("div");
+  info.className = "saga-info";
+
+  const h3 = document.createElement("h3");
+  h3.textContent = bloque.nombre;
+
+  // Badge CANON / NO CANON para películas
+  if (esPelicula) {
+    const badge = document.createElement("span");
+    badge.className = "badge-tipo " + (esCanon ? "badge-canon" : "badge-nocanon");
+    badge.textContent = esCanon ? "CANON" : "NO CANON";
+    h3.appendChild(badge);
+  }
+
+  const ep = document.createElement("div");
+  ep.className = "episodios";
+  ep.textContent = bloque.episodios || "";
+
+  info.appendChild(h3);
+  info.appendChild(ep);
+  header.appendChild(info);
+
+  const flecha = document.createElement("span");
+  flecha.className = "flecha";
+  flecha.textContent = "▼";
+  header.appendChild(flecha);
+
+  header.addEventListener("click", function() {
+    div.classList.toggle("abierta");
+  });
+
+  div.appendChild(header);
+
+  // --- BODY ---
+  const body = document.createElement("div");
+  body.className = "saga-body";
+
+  // Personajes (si existen)
+  if (bloque.personajes && bloque.personajes.length > 0) {
+    const persDiv = document.createElement("div");
+    persDiv.className = "personajes";
+    bloque.personajes.forEach(function(p) {
+      const pDiv = document.createElement("div");
+      pDiv.className = "personaje";
+
+      const wrap = document.createElement("div");
+      wrap.className = "avatar-wrap";
+
+      if (p.img) {
+        const img = document.createElement("img");
+        img.src = p.img;
+        img.alt = p.nombre;
+        img.onerror = function() {
+          wrap.textContent = "";
+          const respaldo = document.createElement("img");
+          respaldo.src = makeAvatarRespaldo(p.nombre, bloque.color || "#555");
+          respaldo.alt = p.nombre;
+          wrap.appendChild(respaldo);
+        };
+        wrap.appendChild(img);
+      } else {
+        const respaldo = document.createElement("img");
+        respaldo.src = makeAvatarRespaldo(p.nombre, bloque.color || "#555");
+        respaldo.alt = p.nombre;
+        wrap.appendChild(respaldo);
+      }
+
+      pDiv.appendChild(wrap);
+
+      const span = document.createElement("span");
+      span.textContent = p.nombre;
+      pDiv.appendChild(span);
+
+      persDiv.appendChild(pDiv);
+    });
+    body.appendChild(persDiv);
+  }
+
+  // Resumen
+  if (bloque.resumen) {
+    const resumen = document.createElement("p");
+    resumen.className = "resumen";
+    resumen.textContent = "📌 " + bloque.resumen;
+    body.appendChild(resumen);
+  }
+
+  // Items
+  if (bloque.items) {
+    const itemsDiv = document.createElement("div");
+    itemsDiv.className = "items";
+    bloque.items.forEach(function(it) {
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "item";
+      itemDiv.id = "fila-" + it.id;
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.id = it.id;
+      checkbox.checked = !!estado[it.id];
+      checkbox.addEventListener("change", function(e) {
+        estado[it.id] = e.target.checked;
+        try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch(err) {}
+        actualizar();
+      });
+
+      const label = document.createElement("label");
+      label.htmlFor = it.id;
+      label.textContent = it.texto;
+
+      if (it.tag) {
+        const tag = document.createElement("span");
+        tag.className = "tag" +
+          (it.tag === "evitar" ? " evitar" : (it.tag === "nota" ? " nota" : ""));
+        tag.textContent = it.tag.toUpperCase();
+        label.appendChild(tag);
+      }
+
+      itemDiv.appendChild(checkbox);
+      itemDiv.appendChild(label);
+      itemsDiv.appendChild(itemDiv);
+    });
+    body.appendChild(itemsDiv);
+  }
+
+  div.appendChild(body);
+  contenedor.appendChild(div);
+});
+
+// ========= ACTUALIZAR PROGRESO =========
+// Solo cuentan: sagas + películas CANON
+function actualizar() {
+  let total = 0, hechos = 0;
+  CONTENIDO.forEach(function(bloque) {
+    const cuenta = bloque.tipo === "saga" || bloque.canon === true;
+    if (!cuenta) return;
+    if (!bloque.items) return;
+
+    bloque.items.forEach(function(it) {
+      total++;
+      if (estado[it.id]) hechos++;
+      const fila = document.getElementById("fila-" + it.id);
+      if (fila) {
+        if (estado[it.id]) fila.classList.add("hecho");
+        else fila.classList.remove("hecho");
+      }
+    });
+  });
+  const pct = total ? Math.round(hechos / total * 100) : 0;
+  document.getElementById("barraGlobal").style.width = pct + "%";
+  document.getElementById("progresoTexto").textContent = "Progreso global: " + pct + "%";
+  document.getElementById("contador").textContent = hechos + " / " + total + " ítems (solo canon)";
+}
+
+// ========= CONTROLES =========
+function expandirTodo(abrir) {
+  document.querySelectorAll(".saga").forEach(function(s) {
+    if (abrir) s.classList.add("abierta");
+    else s.classList.remove("abierta");
+  });
+}
+
+function reiniciar() {
+  if (confirm("¿Seguro que quieres borrar todo el progreso?")) {
+    estado = {};
+    try { localStorage.removeItem(CLAVE); } catch(e) {}
+    document.querySelectorAll('input[type="checkbox"]').forEach(function(c) { c.checked = false; });
+    actualizar();
+  }
+}
+
+actualizar();
+
+} catch (error) {
+  const box = document.getElementById("errorBox");
+  box.style.display = "block";
+  box.textContent = "⚠️ ERROR al cargar la checklist:\n" + error.message + "\n\n" + error.stack;
+  console.error(error);
+}
+</script>
+</body>
+</html>
