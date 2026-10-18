@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏴‍☠️ Checklist One Piece 🏴‍☠️</title>
+<title>🏴‍☠️ Checklist One Piece</title>
 <style>
   :root {
     --onepiece-blue:   #2E62A3;
@@ -33,18 +33,32 @@
   header { max-width: 900px; margin: 0 auto 20px; text-align: center; }
   h1 {
     font-size: 1.8rem;
-    background: linear-gradient(90deg, var(--onepiece-yellow), var(--onepiece-red), var(--onepiece-sky));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
     margin-bottom: 4px;
     letter-spacing: 0.5px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    flex-wrap: wrap;
   }
-  h1 .bandera { font-size: 1.6rem; -webkit-text-fill-color: initial; }
+  /* La bandera NO se ve afectada por el gradiente */
+  h1 .bandera {
+    font-size: 1.6rem;
+    color: var(--onepiece-white);
+    -webkit-text-fill-color: var(--onepiece-white);
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    filter: drop-shadow(0 0 6px rgba(255, 205, 0, 0.5));
+  }
+  /* Solo el texto del título lleva el gradiente */
+  h1 .titulo-gradiente {
+    background: linear-gradient(90deg, var(--onepiece-yellow), var(--onepiece-red), var(--onepiece-sky));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
   .sub { color: var(--suave); font-size: 0.9rem; }
 
   .barra-global {
@@ -327,9 +341,7 @@
 
   .saga.pelicula-nocanon { opacity: 0.75; border-style: dashed; }
 
-  /* ============================================================
-     MODAL FLOTANTE
-     ============================================================ */
+  /* MODAL */
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -466,7 +478,11 @@
 <body>
 
 <header>
-  <h1><span class="bandera"></span> 🏴‍☠️ Checklist One Piece Ricardo🏴‍☠️</h1>
+  <h1>
+    <span class="bandera">🏴‍☠️</span>
+    <span class="titulo-gradiente">Checklist One Piece</span>
+    <span class="bandera">🏴‍☠️</span> 
+  </h1>
   <p class="sub">Marca lo que vas viendo. El progreso solo cuenta sagas y películas <strong>CANON</strong>.</p>
 </header>
 
@@ -533,12 +549,10 @@ function escapeHtml(s) {
   }[c]));
 }
 
-// ---- Generador de URL Fandom ----
 function fandom(file) {
   return "https://onepiece.fandom.com/wiki/Special:FilePath/" + file;
 }
 
-// ---- Placeholder de fondo ----
 function makePlaceholderFondo(color, icono, nombre) {
   const dark  = adjustColor(color, -40);
   const light = adjustColor(color, 15);
@@ -569,7 +583,6 @@ function makePlaceholderFondo(color, icono, nombre) {
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
-// ---- Avatar SVG ----
 function makeAvatarRespaldo(nombre, color) {
   const letra = (nombre || "?").charAt(0).toUpperCase();
   const dark = adjustColor(color, -25);
@@ -588,7 +601,6 @@ function makeAvatarRespaldo(nombre, color) {
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
-// ---- Carga de avatar robusta ----
 function cargarAvatar(imgEl, urls, nombre, color) {
   imgEl.src = makeAvatarRespaldo(nombre, color);
   if (!urls || urls.length === 0) return;
@@ -629,10 +641,9 @@ function cargarAvatar(imgEl, urls, nombre, color) {
 }
 
 /* =====================================================================
-   DATOS CON DESCRIPCIONES, AÑOS Y MOTIVOS
+   DATOS
    ===================================================================== */
 const CONTENIDO = [
-  // ---------------- SAGA 1: EAST BLUE ----------------
   { tipo:"saga", nombre:"East Blue", episodios:"Ep. 1–61",
     año:"1999–2000",
     iconos:["🌊"], color: C.SKY,
@@ -658,7 +669,6 @@ const CONTENIDO = [
       {id:"eb4", texto:"Ep. 54–61: Isla Warship (relleno)", tag:"evitar"}
     ]
   },
-  // ---------------- PELÍCULA 1 ----------------
   { tipo:"pelicula", canon:false, nombre:"One Piece: La Película",
     año:"2000", episodios:"Después de Captain Kuro · NO CANON",
     iconos:["🏴‍☠️","⚔️"], color: C.BROWN,
@@ -672,7 +682,6 @@ const CONTENIDO = [
         motivo:"Pirata codicioso que roba la espada legendaria por su valor."}
     ],
     items:[{id:"p01", texto:"Película vista", tag:"no canon"}]},
-  // ---------------- PELÍCULA 2 ----------------
   { tipo:"pelicula", canon:false, nombre:"Aventura en la Isla Espiral",
     año:"2001", episodios:"Después de Loguetown · NO CANON",
     iconos:["🌪️","🧭"], color: C.BROWN,
@@ -687,7 +696,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p02", texto:"Película vista", tag:"no canon"}]},
 
-  // ---------------- SAGA 2: ALABASTA ----------------
   { tipo:"saga", nombre:"Alabasta", episodios:"Ep. 62–135",
     año:"2001–2002",
     iconos:["🏜️"], color: C.YELLOW,
@@ -742,7 +750,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p05", texto:"Película vista", tag:"no canon"}]},
 
-  // ---------------- SAGA 3: SKYPIEA ----------------
   { tipo:"saga", nombre:"Skypiea", episodios:"Ep. 136–206",
     año:"2003–2004",
     iconos:["☁️"], color: C.SKY,
@@ -782,7 +789,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p07", texto:"Película vista", tag:"no canon"}]},
 
-  // ---------------- SAGA 4: WATER 7 ----------------
   { tipo:"saga", nombre:"Water 7 / Enies Lobby", episodios:"Ep. 207–325",
     año:"2005–2007",
     iconos:["🚂"], color: C.BLUE,
@@ -826,7 +832,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p09", texto:"Película vista", tag:"no canon"}]},
 
-  // ---------------- SAGA 5: THRILLER BARK ----------------
   { tipo:"saga", nombre:"Thriller Bark", episodios:"Ep. 326–384",
     año:"2008",
     iconos:["💀"], color: C.BLACK,
@@ -844,7 +849,6 @@ const CONTENIDO = [
       {id:"tb2", texto:"Ep. 326–336 y 382–384: Ice Hunter y Spa Island", tag:"evitar"}
     ]
   },
-  // ---------------- PELÍCULA CANON: STRONG WORLD ----------------
   { tipo:"pelicula", canon:true, nombre:"Strong World",
     año:"2009", episodios:"Entre Thriller Bark y Sabaody · CANON",
     iconos:["🦁","🌿"], color: C.YELLOW,
@@ -868,7 +872,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p11", texto:"Película vista", tag:"no canon"}]},
 
-  // ---------------- SAGA 6: MARINEFORD ----------------
   { tipo:"saga", nombre:"Marineford", episodios:"Ep. 385–516",
     año:"2009–2011",
     iconos:["⚔️"], color: C.RED,
@@ -889,7 +892,6 @@ const CONTENIDO = [
       {id:"mf3", texto:"Ep. 406–407, 426–429, 457–458: Relleno y recopilatorios", tag:"evitar"}
     ]
   },
-  // ---------------- PELÍCULA CANON: FILM Z ----------------
   { tipo:"pelicula", canon:true, nombre:"Film Z",
     año:"2012", episodios:"Antes de Punk Hazard · CANON",
     iconos:["⚓","🌋"], color: C.YELLOW,
@@ -902,7 +904,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p12", texto:"Película vista", tag:"canon"}]},
 
-  // ---------------- SAGA 7: ISLA GYOJIN ----------------
   { tipo:"saga", nombre:"Isla Gyojin", episodios:"Ep. 517–574",
     año:"2011–2012",
     iconos:["🐟"], color: C.BLUE,
@@ -919,7 +920,6 @@ const CONTENIDO = [
     ]
   },
 
-  // ---------------- SAGA 8: DRESSROSA ----------------
   { tipo:"saga", nombre:"Dressrosa", episodios:"Ep. 575–746",
     año:"2014–2016",
     iconos:["🌹"], color: C.BROWN,
@@ -938,7 +938,6 @@ const CONTENIDO = [
       {id:"dr3", texto:"Ep. 626–628 y 747–750: Relleno", tag:"evitar"}
     ]
   },
-  // ---------------- PELÍCULA CANON: FILM GOLD ----------------
   { tipo:"pelicula", canon:true, nombre:"Film Gold",
     año:"2016", episodios:"Después de Silver Mine · CANON",
     iconos:["💰","⛵"], color: C.YELLOW,
@@ -951,7 +950,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p13", texto:"Película vista", tag:"canon"}]},
 
-  // ---------------- SAGA 9: WHOLE CAKE ----------------
   { tipo:"saga", nombre:"Whole Cake Island", episodios:"Ep. 747–889",
     año:"2017–2019",
     iconos:["🍰"], color: C.BROWN,
@@ -982,7 +980,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p14", texto:"Película vista", tag:"no canon"}]},
 
-  // ---------------- SAGA 10: WANO ----------------
   { tipo:"saga", nombre:"Wano", episodios:"Ep. 890–1085",
     año:"2019–2024",
     iconos:["🏯"], color: C.RED,
@@ -1002,7 +999,6 @@ const CONTENIDO = [
       {id:"wa4", texto:"Ep. 895–896 y 1029–1030: Relleno", tag:"evitar"}
     ]
   },
-  // ---------------- PELÍCULA CANON: FILM RED ----------------
   { tipo:"pelicula", canon:true, nombre:"Film Red",
     año:"2022", episodios:"Durante el Acto III de Wano · CANON",
     iconos:["🎤","🎵"], color: C.YELLOW,
@@ -1015,7 +1011,6 @@ const CONTENIDO = [
     ],
     items:[{id:"p15", texto:"Película vista", tag:"canon"}]},
 
-  // ---------------- SAGA 11: EGGHEAD ----------------
   { tipo:"saga", nombre:"Egghead", episodios:"Ep. 1086–actualidad",
     año:"2024–actualidad",
     iconos:["🧪"], color: C.SKY,
@@ -1033,7 +1028,7 @@ const CONTENIDO = [
 ];
 
 // ========== ESTADO ==========
-const CLAVE = "onepiece_checklist_v11";
+const CLAVE = "onepiece_checklist_v12";
 let estado = {};
 try {
   const g = localStorage.getItem(CLAVE);
@@ -1128,7 +1123,8 @@ CONTENIDO.forEach(function(bloque) {
   const esCanon = bloque.canon === true;
 
   const div = document.createElement("div");
-  div.className = "saga abierta";
+  // 🔑 CAMBIO: todas las tarjetas empiezan CONTRÍDAS
+  div.className = "saga";
   if (esPelicula && !esCanon) div.classList.add("pelicula-nocanon");
 
   const estadoFondo = document.createElement("div");
