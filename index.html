@@ -41,7 +41,6 @@
     gap: 10px;
     flex-wrap: wrap;
   }
-  /* La bandera NO se ve afectada por el gradiente */
   h1 .bandera {
     font-size: 1.6rem;
     color: var(--onepiece-white);
@@ -51,7 +50,6 @@
     background-clip: initial;
     filter: drop-shadow(0 0 6px rgba(255, 205, 0, 0.5));
   }
-  /* Solo el texto del título lleva el gradiente */
   h1 .titulo-gradiente {
     background: linear-gradient(90deg, var(--onepiece-yellow), var(--onepiece-red), var(--onepiece-sky));
     -webkit-background-clip: text;
@@ -70,7 +68,22 @@
   .barra-global .info {
     display: flex; justify-content: space-between;
     font-size: 0.85rem; margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
   }
+  .estado-sync {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(139, 163, 199, 0.15);
+    color: var(--suave);
+    transition: all 0.2s;
+  }
+  .estado-sync.sincronizando { background: rgba(255, 205, 0, 0.15); color: var(--onepiece-yellow); }
+  .estado-sync.ok { background: rgba(46, 98, 163, 0.25); color: var(--onepiece-sky); }
+  .estado-sync.error { background: rgba(215, 0, 0, 0.2); color: #ff6b6b; }
+
   .progreso { height: 12px; background: #000814; border-radius: 8px; overflow: hidden; }
   .progreso > div {
     height: 100%; width: 0%;
@@ -481,7 +494,6 @@
   <h1>
     <span class="bandera">🏴‍☠️</span>
     <span class="titulo-gradiente">Checklist One Piece</span>
-    <span class="bandera">🏴‍☠️</span> 
   </h1>
   <p class="sub">Marca lo que vas viendo. El progreso solo cuenta sagas y películas <strong>CANON</strong>.</p>
 </header>
@@ -490,6 +502,7 @@
   <div class="info">
     <span id="progresoTexto">Progreso global: 0%</span>
     <span id="contador">0 / 0 ítems</span>
+    <span id="estadoSync" class="estado-sync">Conectando...</span>
   </div>
   <div class="progreso"><div id="barraGlobal"></div></div>
 </div>
@@ -497,6 +510,7 @@
 <div class="botones">
   <button onclick="expandirTodo(true)">Expandir todo</button>
   <button onclick="expandirTodo(false)">Contraer todo</button>
+  <button onclick="forzarSync()">🔄 Forzar sincronización</button>
   <button class="peligro" onclick="reiniciar()">Reiniciar progreso</button>
 </div>
 
@@ -515,8 +529,22 @@
 
 <script>
 /* =====================================================================
-   PALETA OFICIAL
+   CONFIGURACIÓN DE GITHUB GIST
+   ---------------------------------------------------------------------
+   1. Crea un Gist secreto en https://gist.github.com con:
+      - Nombre de archivo: onepiece-progreso.json
+      - Contenido: {}
+   2. Copia el ID del Gist (de la URL).
+   3. Genera un PAT en https://github.com/settings/tokens
+      con SOLO el scope "gist".
+   4. Pega ambos valores abajo.
    ===================================================================== */
+const GIST_ID      = "TU_GIST_ID_AQUÍ";        // ← Reemplaza
+const GITHUB_TOKEN = "TU_TOKEN_AQUÍ";          // ← Reemplaza
+const GIST_URL     = "https://api.github.com/gists/" + GIST_ID;
+const ARCHIVO      = "onepiece-progreso.json";
+
+// ---- Utilidades de color ----
 const C = {
   BLUE:   "#2E62A3",
   SKY:    "#62C3F8",
@@ -527,7 +555,6 @@ const C = {
   WHITE:  "#FFFFFF"
 };
 
-// ---- Utilidades de color ----
 function adjustColor(hex, percent) {
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
@@ -1027,13 +1054,89 @@ const CONTENIDO = [
   }
 ];
 
-// ========== ESTADO ==========
-const CLAVE = "onepiece_checklist_v12";
+// ========== ESTADO GLOBAL ==========
 let estado = {};
-try {
-  const g = localStorage.getItem(CLAVE);
-  if (g) estado = JSON.parse(g);
-} catch(e) { estado = {}; }
+
+// ========== INDICADOR DE SINCRONIZACIÓN ==========
+const estadoSyncEl = document.getElementById("estadoSync");
+function setSyncEstado(texto, clase) {
+  estadoSyncEl.textContent = texto;
+  estadoSyncEl.className = "estado-sync" + (clase ? " " + clase : "");
+}
+
+/* =====================================================================
+   SINCRONIZACIÓN CON GITHUB GIST
+   ===================================================================== */
+async function cargarDesdeNube() {
+  if (GIST_ID === "TU_GIST_ID_AQUÍ" || GITHUB_TOKEN === "TU_TOKEN_AQUÍ") {
+    setSyncEstado("⚠️ Configura GIST_ID y TOKEN", "error");
+    console.warn("Debes reemplazar GIST_ID y GITHUB_TOKEN en el código.");
+    return false;
+  }
+
+  setSyncEstado("Cargando...", "sincronizando");
+  try {
+    const res = await fetch(GIST_URL, {
+      method: "GET",
+      headers: {
+        "Authorization": "token " + GITHUB_TOKEN,
+        "Accept": "application/vnd.github+json"
+      }
+    });
+    if (!res.ok) throw new Error("Error HTTP " + res.status);
+    const data = await res.json();
+    const archivo = data.files[ARCHIVO];
+    if (!archivo) throw new Error("Archivo no encontrado en el Gist");
+    estado = JSON.parse(archivo.content || "{}");
+    setSyncEstado("Sincronizado ✔", "ok");
+    return true;
+  } catch (e) {
+    console.error("Error al cargar desde GitHub Gist:", e);
+    setSyncEstado("Error de conexión", "error");
+    return false;
+  }
+}
+
+async function guardarEnNube() {
+  if (GIST_ID === "TU_GIST_ID_AQUÍ" || GITHUB_TOKEN === "TU_TOKEN_AQUÍ") {
+    setSyncEstado("⚠️ Configura GIST_ID y TOKEN", "error");
+    return false;
+  }
+
+  setSyncEstado("Guardando...", "sincronizando");
+  try {
+    const res = await fetch(GIST_URL, {
+      method: "PATCH",
+      headers: {
+        "Authorization": "token " + GITHUB_TOKEN,
+        "Content-Type": "application/json",
+        "Accept": "application/vnd.github+json"
+      },
+      body: JSON.stringify({
+        files: {
+          [ARCHIVO]: { content: JSON.stringify(estado, null, 2) }
+        }
+      })
+    });
+    if (!res.ok) throw new Error("Error HTTP " + res.status);
+    setSyncEstado("Guardado ✔", "ok");
+    return true;
+  } catch (e) {
+    console.error("Error al guardar en GitHub Gist:", e);
+    setSyncEstado("Error al guardar", "error");
+    return false;
+  }
+}
+
+async function forzarSync() {
+  const ok = await cargarDesdeNube();
+  if (ok) {
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = !!estado[cb.id];
+    });
+    actualizarProgresoUI();
+  }
+}
 
 /* =====================================================================
    MODAL
@@ -1118,209 +1221,213 @@ document.addEventListener("keydown", function(e) {
 const contenedor = document.getElementById("contenedor");
 let indiceSaga = 0;
 
-CONTENIDO.forEach(function(bloque) {
-  const esPelicula = bloque.tipo === "pelicula";
-  const esCanon = bloque.canon === true;
+function renderizarTodo() {
+  contenedor.innerHTML = "";
+  indiceSaga = 0;
 
-  const div = document.createElement("div");
-  // 🔑 CAMBIO: todas las tarjetas empiezan CONTRÍDAS
-  div.className = "saga";
-  if (esPelicula && !esCanon) div.classList.add("pelicula-nocanon");
+  CONTENIDO.forEach(function(bloque) {
+    const esPelicula = bloque.tipo === "pelicula";
+    const esCanon = bloque.canon === true;
 
-  const estadoFondo = document.createElement("div");
-  estadoFondo.className = "estado-fondo";
-  div.appendChild(estadoFondo);
+    const div = document.createElement("div");
+    div.className = "saga";
+    if (esPelicula && !esCanon) div.classList.add("pelicula-nocanon");
 
-  // ---- HEADER ----
-  const header = document.createElement("div");
-  header.className = "saga-header";
+    const estadoFondo = document.createElement("div");
+    estadoFondo.className = "estado-fondo";
+    div.appendChild(estadoFondo);
 
-  const portada = document.createElement("div");
-  portada.className = "portada";
-  portada.style.background =
-    "linear-gradient(135deg, " + bloque.color + ", " + adjustColor(bloque.color, -25) + ")";
-  portada.style.color = getTextColor(bloque.color);
-  const iconos = bloque.iconos || ["🏴‍☠️"];
-  const iconosHTML = `<div class="iconos-saga ${esPelicula ? 'pelicula' : ''}">${iconos.map(i => `<span>${i}</span>`).join("")}</div>`;
-  portada.innerHTML = iconosHTML;
-  header.appendChild(portada);
+    // ---- HEADER ----
+    const header = document.createElement("div");
+    header.className = "saga-header";
 
-  const info = document.createElement("div");
-  info.className = "saga-info";
+    const portada = document.createElement("div");
+    portada.className = "portada";
+    portada.style.background =
+      "linear-gradient(135deg, " + bloque.color + ", " + adjustColor(bloque.color, -25) + ")";
+    portada.style.color = getTextColor(bloque.color);
+    const iconos = bloque.iconos || ["🏴‍☠️"];
+    const iconosHTML = `<div class="iconos-saga ${esPelicula ? 'pelicula' : ''}">${iconos.map(i => `<span>${i}</span>`).join("")}</div>`;
+    portada.innerHTML = iconosHTML;
+    header.appendChild(portada);
 
-  const h3 = document.createElement("h3");
-  h3.textContent = bloque.nombre;
+    const info = document.createElement("div");
+    info.className = "saga-info";
 
-  if (esPelicula) {
-    const badge = document.createElement("span");
-    badge.className = "badge-tipo " + (esCanon ? "badge-canon" : "badge-nocanon");
-    badge.textContent = esCanon ? "CANON" : "NO CANON";
-    h3.appendChild(badge);
-  }
+    const h3 = document.createElement("h3");
+    h3.textContent = bloque.nombre;
 
-  const meta = document.createElement("div");
-  meta.className = "meta";
-  meta.innerHTML = `<span class="año">📅 ${escapeHtml(bloque.año || "")}</span> · ${escapeHtml(bloque.episodios || "")}`;
-
-  info.appendChild(h3);
-  info.appendChild(meta);
-  header.appendChild(info);
-
-  const acciones = document.createElement("div");
-  acciones.className = "acciones";
-
-  const btnInfo = document.createElement("button");
-  btnInfo.className = "btn-info";
-  btnInfo.textContent = "ℹ";
-  btnInfo.title = "Ver información de la " + (esPelicula ? "película" : "saga");
-  btnInfo.addEventListener("click", function(e) {
-    e.stopPropagation();
-    abrirModalInfoSaga(bloque);
-  });
-  acciones.appendChild(btnInfo);
-
-  const flecha = document.createElement("span");
-  flecha.className = "flecha";
-  flecha.textContent = "▼";
-  acciones.appendChild(flecha);
-
-  header.appendChild(acciones);
-
-  header.addEventListener("click", function() { div.classList.toggle("abierta"); });
-  div.appendChild(header);
-
-  // ---- BODY ----
-  const body = document.createElement("div");
-  body.className = "saga-body";
-
-  if (bloque.personajes && bloque.personajes.length > 0) {
-    const persDiv = document.createElement("div");
-    persDiv.className = "personajes";
-    bloque.personajes.forEach(function(p) {
-      const pDiv = document.createElement("div");
-      pDiv.className = "personaje";
-
-      const wrap = document.createElement("div");
-      wrap.className = "avatar-wrap";
-      wrap.title = "Clic para ver el motivo de " + p.nombre;
-      wrap.addEventListener("click", function(e) {
-        e.stopPropagation();
-        abrirModalInfoPersonaje(p);
-      });
-
-      const img = document.createElement("img");
-      img.alt = p.nombre;
-      wrap.appendChild(img);
-
-      const urls = p.img ? [p.img] : [];
-      cargarAvatar(img, urls, p.nombre, p.color || bloque.color);
-
-      pDiv.appendChild(wrap);
-      const span = document.createElement("span");
-      span.textContent = p.nombre;
-      pDiv.appendChild(span);
-      persDiv.appendChild(pDiv);
-    });
-    body.appendChild(persDiv);
-  }
-
-  if (bloque.resumen) {
-    const resumen = document.createElement("p");
-    resumen.className = "resumen";
-    resumen.textContent = "📌 " + bloque.resumen;
-    body.appendChild(resumen);
-  }
-
-  if (bloque.items) {
-    const itemsDiv = document.createElement("div");
-    itemsDiv.className = "items";
-    bloque.items.forEach(function(it) {
-      const itemDiv = document.createElement("div");
-      itemDiv.className = "item";
-      itemDiv.id = "fila-" + it.id;
-
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.id = it.id;
-      cb.checked = !!estado[it.id];
-      cb.addEventListener("change", function(e) {
-        estado[it.id] = e.target.checked;
-        try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch(err) {}
-        actualizar();
-      });
-
-      const label = document.createElement("label");
-      label.htmlFor = it.id;
-      label.textContent = it.texto;
-
-      if (it.tag) {
-        const tag = document.createElement("span");
-        tag.className = "tag" + (it.tag === "evitar" ? " evitar" : (it.tag === "nota" ? " nota" : ""));
-        tag.textContent = it.tag.toUpperCase();
-        label.appendChild(tag);
-      }
-
-      itemDiv.appendChild(cb);
-      itemDiv.appendChild(label);
-      itemsDiv.appendChild(itemDiv);
-    });
-    body.appendChild(itemsDiv);
-  }
-
-  div.appendChild(body);
-  contenedor.appendChild(div);
-
-  // ---- FONDO ----
-  const placeholderFondo = makePlaceholderFondo(bloque.color, iconos[0] || "🏴‍☠️", bloque.nombre);
-  div.style.backgroundImage = "url('" + placeholderFondo + "')";
-
-  if (bloque.fondos && bloque.fondos.length > 0) {
-    estadoFondo.textContent = "cargando";
-    estadoFondo.className = "estado-fondo cargando";
-
-    let idxF = 0;
-    function intentarFondo() {
-      if (idxF >= bloque.fondos.length) {
-        estadoFondo.textContent = "placeholder";
-        estadoFondo.className = "estado-fondo fallback";
-        return;
-      }
-      const url = bloque.fondos[idxF++];
-      const tmp = new Image();
-      tmp.referrerPolicy = "no-referrer";
-      let terminado = false;
-      const timeout = setTimeout(function() {
-        if (terminado) return;
-        terminado = true;
-        tmp.onload = tmp.onerror = null;
-        intentarFondo();
-      }, 3500);
-      tmp.onload = function() {
-        if (terminado) return;
-        terminado = true;
-        clearTimeout(timeout);
-        if (tmp.naturalWidth < 20 || tmp.naturalHeight < 20) { intentarFondo(); return; }
-        div.style.backgroundImage = "url('" + url + "')";
-        estadoFondo.textContent = "cargado";
-        estadoFondo.className = "estado-fondo";
-        setTimeout(function() { estadoFondo.style.opacity = 0; }, 1500);
-      };
-      tmp.onerror = function() {
-        if (terminado) return;
-        terminado = true;
-        clearTimeout(timeout);
-        intentarFondo();
-      };
-      tmp.src = url;
+    if (esPelicula) {
+      const badge = document.createElement("span");
+      badge.className = "badge-tipo " + (esCanon ? "badge-canon" : "badge-nocanon");
+      badge.textContent = esCanon ? "CANON" : "NO CANON";
+      h3.appendChild(badge);
     }
-    intentarFondo();
-  } else {
-    estadoFondo.textContent = "";
-  }
-});
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.innerHTML = `<span class="año">📅 ${escapeHtml(bloque.año || "")}</span> · ${escapeHtml(bloque.episodios || "")}`;
+
+    info.appendChild(h3);
+    info.appendChild(meta);
+    header.appendChild(info);
+
+    const acciones = document.createElement("div");
+    acciones.className = "acciones";
+
+    const btnInfo = document.createElement("button");
+    btnInfo.className = "btn-info";
+    btnInfo.textContent = "ℹ";
+    btnInfo.title = "Ver información de la " + (esPelicula ? "película" : "saga");
+    btnInfo.addEventListener("click", function(e) {
+      e.stopPropagation();
+      abrirModalInfoSaga(bloque);
+    });
+    acciones.appendChild(btnInfo);
+
+    const flecha = document.createElement("span");
+    flecha.className = "flecha";
+    flecha.textContent = "▼";
+    acciones.appendChild(flecha);
+
+    header.appendChild(acciones);
+
+    header.addEventListener("click", function() { div.classList.toggle("abierta"); });
+    div.appendChild(header);
+
+    // ---- BODY ----
+    const body = document.createElement("div");
+    body.className = "saga-body";
+
+    if (bloque.personajes && bloque.personajes.length > 0) {
+      const persDiv = document.createElement("div");
+      persDiv.className = "personajes";
+      bloque.personajes.forEach(function(p) {
+        const pDiv = document.createElement("div");
+        pDiv.className = "personaje";
+
+        const wrap = document.createElement("div");
+        wrap.className = "avatar-wrap";
+        wrap.title = "Clic para ver el motivo de " + p.nombre;
+        wrap.addEventListener("click", function(e) {
+          e.stopPropagation();
+          abrirModalInfoPersonaje(p);
+        });
+
+        const img = document.createElement("img");
+        img.alt = p.nombre;
+        wrap.appendChild(img);
+
+        const urls = p.img ? [p.img] : [];
+        cargarAvatar(img, urls, p.nombre, p.color || bloque.color);
+
+        pDiv.appendChild(wrap);
+        const span = document.createElement("span");
+        span.textContent = p.nombre;
+        pDiv.appendChild(span);
+        persDiv.appendChild(pDiv);
+      });
+      body.appendChild(persDiv);
+    }
+
+    if (bloque.resumen) {
+      const resumen = document.createElement("p");
+      resumen.className = "resumen";
+      resumen.textContent = "📌 " + bloque.resumen;
+      body.appendChild(resumen);
+    }
+
+    if (bloque.items) {
+      const itemsDiv = document.createElement("div");
+      itemsDiv.className = "items";
+      bloque.items.forEach(function(it) {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "item";
+        itemDiv.id = "fila-" + it.id;
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.id = it.id;
+        cb.checked = !!estado[it.id];
+        cb.addEventListener("change", function(e) {
+          estado[it.id] = e.target.checked;
+          actualizarProgresoUI();
+          guardarEnNube();
+        });
+
+        const label = document.createElement("label");
+        label.htmlFor = it.id;
+        label.textContent = it.texto;
+
+        if (it.tag) {
+          const tag = document.createElement("span");
+          tag.className = "tag" + (it.tag === "evitar" ? " evitar" : (it.tag === "nota" ? " nota" : ""));
+          tag.textContent = it.tag.toUpperCase();
+          label.appendChild(tag);
+        }
+
+        itemDiv.appendChild(cb);
+        itemDiv.appendChild(label);
+        itemsDiv.appendChild(itemDiv);
+      });
+      body.appendChild(itemsDiv);
+    }
+
+    div.appendChild(body);
+    contenedor.appendChild(div);
+
+    // ---- FONDO ----
+    const placeholderFondo = makePlaceholderFondo(bloque.color, iconos[0] || "🏴‍☠️", bloque.nombre);
+    div.style.backgroundImage = "url('" + placeholderFondo + "')";
+
+    if (bloque.fondos && bloque.fondos.length > 0) {
+      estadoFondo.textContent = "cargando";
+      estadoFondo.className = "estado-fondo cargando";
+
+      let idxF = 0;
+      function intentarFondo() {
+        if (idxF >= bloque.fondos.length) {
+          estadoFondo.textContent = "placeholder";
+          estadoFondo.className = "estado-fondo fallback";
+          return;
+        }
+        const url = bloque.fondos[idxF++];
+        const tmp = new Image();
+        tmp.referrerPolicy = "no-referrer";
+        let terminado = false;
+        const timeout = setTimeout(function() {
+          if (terminado) return;
+          terminado = true;
+          tmp.onload = tmp.onerror = null;
+          intentarFondo();
+        }, 3500);
+        tmp.onload = function() {
+          if (terminado) return;
+          terminado = true;
+          clearTimeout(timeout);
+          if (tmp.naturalWidth < 20 || tmp.naturalHeight < 20) { intentarFondo(); return; }
+          div.style.backgroundImage = "url('" + url + "')";
+          estadoFondo.textContent = "cargado";
+          estadoFondo.className = "estado-fondo";
+          setTimeout(function() { estadoFondo.style.opacity = 0; }, 1500);
+        };
+        tmp.onerror = function() {
+          if (terminado) return;
+          terminado = true;
+          clearTimeout(timeout);
+          intentarFondo();
+        };
+        tmp.src = url;
+      }
+      intentarFondo();
+    } else {
+      estadoFondo.textContent = "";
+    }
+  });
+}
 
 // ========== PROGRESO ==========
-function actualizar() {
+function actualizarProgresoUI() {
   let total = 0, hechos = 0;
   CONTENIDO.forEach(function(bloque) {
     const cuenta = bloque.tipo === "saga" || bloque.canon === true;
@@ -1348,16 +1455,31 @@ function expandirTodo(abrir) {
     else s.classList.remove("abierta");
   });
 }
-function reiniciar() {
-  if (confirm("¿Seguro que quieres borrar todo el progreso?")) {
+
+async function reiniciar() {
+  if (confirm("¿Seguro que quieres borrar todo el progreso? Esto también borrará el progreso guardado en el Gist.")) {
     estado = {};
-    try { localStorage.removeItem(CLAVE); } catch(e) {}
+    await guardarEnNube();
     document.querySelectorAll('input[type="checkbox"]').forEach(function(c) { c.checked = false; });
-    actualizar();
+    actualizarProgresoUI();
   }
 }
 
-actualizar();
+// ========== INICIALIZACIÓN ==========
+async function init() {
+  renderizarTodo();
+  const ok = await cargarDesdeNube();
+  if (ok) {
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = !!estado[cb.id];
+    });
+    actualizarProgresoUI();
+  } else {
+    actualizarProgresoUI();
+  }
+}
+
+init();
 </script>
 </body>
 </html>
