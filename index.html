@@ -531,17 +531,12 @@
 /* =====================================================================
    CONFIGURACIÓN DE JSONBIN.IO CON ACCESS KEY
    ---------------------------------------------------------------------
-   1. Crea una cuenta en https://jsonbin.io
-   2. Crea un Bin con contenido inicial: {}
-   3. Copia el BIN_ID de la URL del bin
-   4. Ve a "API Keys" → "Create Access Key"
-      - Marca SOLO: Read y Update
-      - NO marques: Create ni Delete
-   5. Pega el BIN_ID y la ACCESS_KEY aquí abajo
+   Tus valores ya están puestos. La URL se construye automáticamente
+   a partir de BIN_ID, así que no puede quedar mal escrita.
    ===================================================================== */
 const BIN_ID      = "6ad8370eac6210605a4457e0";
 const ACCESS_KEY  = "$2a$10$FKFo1JSLGQaQqJWZxta4S.DSONuoRWS7mAaz/j6YtUWsvYRXz20G.";
-const JSONBIN_URL = "https://api.jsonbin.io/v3/b/6ad8370eac6210605a4457e0";
+const JSONBIN_URL = "https://api.jsonbin.io/v3/b/" + BIN_ID;
 
 // ---- Utilidades de color ----
 const C = {
@@ -1064,15 +1059,9 @@ function setSyncEstado(texto, clase) {
 }
 
 /* =====================================================================
-   SINCRONIZACIÓN CON JSONBIN.IO (usando Access Key)
+   SINCRONIZACIÓN CON JSONBIN.IO (Access Key)
    ===================================================================== */
 async function cargarDesdeNube() {
-  if (BIN_ID === "TU_BIN_ID_AQUÍ" || ACCESS_KEY === "TU_ACCESS_KEY_AQUÍ") {
-    setSyncEstado("⚠️ Configura BIN_ID y ACCESS_KEY", "error");
-    console.warn("Debes reemplazar BIN_ID y ACCESS_KEY en el código.");
-    return false;
-  }
-
   setSyncEstado("Cargando...", "sincronizando");
   try {
     const res = await fetch(JSONBIN_URL + "/latest", {
@@ -1082,10 +1071,12 @@ async function cargarDesdeNube() {
         "Content-Type": "application/json"
       }
     });
-    if (res.status === 401) throw new Error("401 · Access Key inválida o expirada");
-    if (res.status === 404) throw new Error("404 · Bin no encontrado (revisa BIN_ID)");
-    if (res.status === 403) throw new Error("403 · Sin permisos (revisa scopes de la key)");
+
+    if (res.status === 401) throw new Error("401 · Access Key inválida");
+    if (res.status === 403) throw new Error("403 · Sin permisos para leer este bin");
+    if (res.status === 404) throw new Error("404 · Bin no encontrado (revisa el BIN_ID)");
     if (!res.ok) throw new Error("HTTP " + res.status);
+
     const data = await res.json();
     estado = data.record || {};
     setSyncEstado("Sincronizado ✔", "ok");
@@ -1098,11 +1089,6 @@ async function cargarDesdeNube() {
 }
 
 async function guardarEnNube() {
-  if (BIN_ID === "TU_BIN_ID_AQUÍ" || ACCESS_KEY === "TU_ACCESS_KEY_AQUÍ") {
-    setSyncEstado("⚠️ Configura BIN_ID y ACCESS_KEY", "error");
-    return false;
-  }
-
   setSyncEstado("Guardando...", "sincronizando");
   try {
     const res = await fetch(JSONBIN_URL, {
@@ -1113,9 +1099,11 @@ async function guardarEnNube() {
       },
       body: JSON.stringify(estado)
     });
+
     if (res.status === 401) throw new Error("401 · Access Key inválida");
     if (res.status === 403) throw new Error("403 · Sin permiso de escritura");
     if (!res.ok) throw new Error("HTTP " + res.status);
+
     setSyncEstado("Guardado ✔", "ok");
     return true;
   } catch (e) {
