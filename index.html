@@ -529,20 +529,19 @@
 
 <script>
 /* =====================================================================
-   CONFIGURACIÓN DE GITHUB GIST
+   CONFIGURACIÓN DE JSONBIN.IO CON ACCESS KEY
    ---------------------------------------------------------------------
-   1. Crea un Gist secreto en https://gist.github.com con:
-      - Nombre de archivo: onepiece-progreso.json
-      - Contenido: {}
-   2. Copia el ID del Gist (de la URL).
-   3. Genera un PAT en https://github.com/settings/tokens
-      con SOLO el scope "gist".
-   4. Pega ambos valores abajo.
+   1. Crea una cuenta en https://jsonbin.io
+   2. Crea un Bin con contenido inicial: {}
+   3. Copia el BIN_ID de la URL del bin
+   4. Ve a "API Keys" → "Create Access Key"
+      - Marca SOLO: Read y Update
+      - NO marques: Create ni Delete
+   5. Pega el BIN_ID y la ACCESS_KEY aquí abajo
    ===================================================================== */
-const GIST_ID      = "fcbfe3129f65e825d494723d757b5045";        // ← Reemplaza
-const GITHUB_TOKEN = "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";          // ← Reemplaza
-const GIST_URL     = "https://api.github.com/gists/" + GIST_ID;
-const ARCHIVO      = "onepiece-progreso.json";
+const BIN_ID     = "TU_BIN_ID_AQUÍ";        // ← Reemplaza
+const ACCESS_KEY = "TU_ACCESS_KEY_AQUÍ";    // ← Reemplaza
+const JSONBIN_URL = "https://api.jsonbin.io/v3/b/" + BIN_ID;
 
 // ---- Utilidades de color ----
 const C = {
@@ -1065,65 +1064,63 @@ function setSyncEstado(texto, clase) {
 }
 
 /* =====================================================================
-   SINCRONIZACIÓN CON GITHUB GIST
+   SINCRONIZACIÓN CON JSONBIN.IO (usando Access Key)
    ===================================================================== */
 async function cargarDesdeNube() {
-  if (GIST_ID === "TU_GIST_ID_AQUÍ" || GITHUB_TOKEN === "TU_TOKEN_AQUÍ") {
-    setSyncEstado("⚠️ Configura GIST_ID y TOKEN", "error");
-    console.warn("Debes reemplazar GIST_ID y GITHUB_TOKEN en el código.");
+  if (BIN_ID === "TU_BIN_ID_AQUÍ" || ACCESS_KEY === "TU_ACCESS_KEY_AQUÍ") {
+    setSyncEstado("⚠️ Configura BIN_ID y ACCESS_KEY", "error");
+    console.warn("Debes reemplazar BIN_ID y ACCESS_KEY en el código.");
     return false;
   }
 
   setSyncEstado("Cargando...", "sincronizando");
   try {
-    const res = await fetch(GIST_URL, {
+    const res = await fetch(JSONBIN_URL + "/latest", {
       method: "GET",
       headers: {
-        "Authorization": "token " + GITHUB_TOKEN,
-        "Accept": "application/vnd.github+json"
+        "X-Access-Key": ACCESS_KEY,
+        "Content-Type": "application/json"
       }
     });
-    if (!res.ok) throw new Error("Error HTTP " + res.status);
+    if (res.status === 401) throw new Error("401 · Access Key inválida o expirada");
+    if (res.status === 404) throw new Error("404 · Bin no encontrado (revisa BIN_ID)");
+    if (res.status === 403) throw new Error("403 · Sin permisos (revisa scopes de la key)");
+    if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
-    const archivo = data.files[ARCHIVO];
-    if (!archivo) throw new Error("Archivo no encontrado en el Gist");
-    estado = JSON.parse(archivo.content || "{}");
+    estado = data.record || {};
     setSyncEstado("Sincronizado ✔", "ok");
     return true;
   } catch (e) {
-    console.error("Error al cargar desde GitHub Gist:", e);
-    setSyncEstado("Error de conexión", "error");
+    console.error("Error al cargar desde JSONBin:", e);
+    setSyncEstado("❌ " + e.message, "error");
     return false;
   }
 }
 
 async function guardarEnNube() {
-  if (GIST_ID === "TU_GIST_ID_AQUÍ" || GITHUB_TOKEN === "TU_TOKEN_AQUÍ") {
-    setSyncEstado("⚠️ Configura GIST_ID y TOKEN", "error");
+  if (BIN_ID === "TU_BIN_ID_AQUÍ" || ACCESS_KEY === "TU_ACCESS_KEY_AQUÍ") {
+    setSyncEstado("⚠️ Configura BIN_ID y ACCESS_KEY", "error");
     return false;
   }
 
   setSyncEstado("Guardando...", "sincronizando");
   try {
-    const res = await fetch(GIST_URL, {
-      method: "PATCH",
+    const res = await fetch(JSONBIN_URL, {
+      method: "PUT",
       headers: {
-        "Authorization": "token " + GITHUB_TOKEN,
         "Content-Type": "application/json",
-        "Accept": "application/vnd.github+json"
+        "X-Access-Key": ACCESS_KEY
       },
-      body: JSON.stringify({
-        files: {
-          [ARCHIVO]: { content: JSON.stringify(estado, null, 2) }
-        }
-      })
+      body: JSON.stringify(estado)
     });
-    if (!res.ok) throw new Error("Error HTTP " + res.status);
+    if (res.status === 401) throw new Error("401 · Access Key inválida");
+    if (res.status === 403) throw new Error("403 · Sin permiso de escritura");
+    if (!res.ok) throw new Error("HTTP " + res.status);
     setSyncEstado("Guardado ✔", "ok");
     return true;
   } catch (e) {
-    console.error("Error al guardar en GitHub Gist:", e);
-    setSyncEstado("Error al guardar", "error");
+    console.error("Error al guardar en JSONBin:", e);
+    setSyncEstado("❌ " + e.message, "error");
     return false;
   }
 }
@@ -1457,7 +1454,7 @@ function expandirTodo(abrir) {
 }
 
 async function reiniciar() {
-  if (confirm("¿Seguro que quieres borrar todo el progreso? Esto también borrará el progreso guardado en el Gist.")) {
+  if (confirm("¿Seguro que quieres borrar todo el progreso? Esto también borrará el progreso guardado en JSONBin.")) {
     estado = {};
     await guardarEnNube();
     document.querySelectorAll('input[type="checkbox"]').forEach(function(c) { c.checked = false; });
